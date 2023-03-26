@@ -1,0 +1,45 @@
+﻿@page "/customerdata"
+@using CustomerInArrears.Shared
+@inject HttpClient Http
+
+<h3>Customer Data</h3>
+
+@if (customerDatas != null)
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Tenancy Number</th>
+                <th>Property Id</th>
+                <th>Client Name</th>
+                <th>Mobile Number</th>
+                <th>Tenancy Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customerData in customerDatas)
+            {
+                <tr>
+                    <td>@customerData.TenancyNumber</td>
+                    <td>@customerData.PropertyId</td>
+                    <td>@customerData.ClientName</td>
+                    <td>@customerData.MobileNumber</td>
+                    <td>@customerData.TenancyBalance</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Loading...</p>
+}
+
+@code {
+    private List<CustomerData>? customerDatas;
+
+    protected override async Task OnInitializedAsync()
+    {
+        customerDatas = await Http.GetFromJsonAsync<List<CustomerData>>("api/CsvFile/getcustomerinfo");
+    }
+}

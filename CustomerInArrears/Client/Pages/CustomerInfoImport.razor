@@ -1,0 +1,61 @@
+﻿@page "/customerdataimport"
+@using CustomerInArrears.Shared
+@inject HttpClient Http
+@using CsvHelper;
+@using System.Globalization;
+
+<InputFile OnChange="HandleFileSelected" />
+
+@if (records != null)
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Tenancy Number</th>
+                <th>Property Id</th>
+                <th>Client Name</th>
+                <th>Mobile Number</th>
+                <th>Tenancy Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (records.Any())
+            {
+                @foreach (var customer in records)
+                {
+                    <tr>
+                        <td>@customer.TenancyNumber</td>
+                        <td>@customer.PropertyId</td>
+                        <td>@customer.ClientName</td>
+                        <td>@customer.MobileNumber</td>
+                        <td>@customer.TenancyBalance</td>
+                        
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="5">No records found.</td></tr>
+            }
+        </tbody>
+    </table>
+}
+
+
+@code {
+    private List<CustomerData> records;
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        var formData = new MultipartFormDataContent();
+        formData.Add(new StreamContent(file.OpenReadStream()), "file", file.Name);
+
+        var response = await Http.PostAsync("api/CsvFile/uploadcsvfile", formData);
+
+        if (response.IsSuccessStatusCode)
+        {
+            records = await response.Content.ReadFromJsonAsync<List<CustomerData>>();
+        }
+    }
+}
