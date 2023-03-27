@@ -6,7 +6,7 @@
 
 @if (customerDatas != null)
 {
-    <table>
+    <MudSimpleTable Hover="true" Dense="true" FixedHeader="@fixedheader" Style="@(fixedheader?"height:300px;":"")">
         <thead>
             <tr>
                 <th>Tenancy Number</th>
@@ -28,7 +28,9 @@
                 </tr>
             }
         </tbody>
-    </table>
+    </MudSimpleTable>
+    <MudSwitch @bind-Checked="@fixedheader">Fixed Header</MudSwitch>
+
 }
 else
 {
@@ -36,6 +38,8 @@ else
 }
 
 @code {
+
+    bool fixedheader = true;
     private List<CustomerData>? customerDatas;
 
     protected override async Task OnInitializedAsync()

@@ -3,12 +3,13 @@
 @inject HttpClient Http
 @using CsvHelper;
 @using System.Globalization;
+@using System.Net.Http.Headers;
 
 <InputFile OnChange="HandleFileSelected" />
-
-@if (records != null)
+<MudButton><a @onclick="ExportFilteredCsvFile" href="@exportUrl" download="@exportFileName">Export File</a></MudButton>
+@if (customerDatas != null)
 {
-    <table>
+    <MudSimpleTable Hover="true" Dense="true" FixedHeader="@fixedheader" Style="@(fixedheader?"height:300px;":"")">
         <thead>
             <tr>
                 <th>Tenancy Number</th>
@@ -19,31 +20,64 @@
             </tr>
         </thead>
         <tbody>
-            @if (records.Any())
+            @foreach (var customerData in customerDatas)
             {
-                @foreach (var customer in records)
-                {
-                    <tr>
-                        <td>@customer.TenancyNumber</td>
-                        <td>@customer.PropertyId</td>
-                        <td>@customer.ClientName</td>
-                        <td>@customer.MobileNumber</td>
-                        <td>@customer.TenancyBalance</td>
+                <tr>
+                    <td>@customerData.TenancyNumber</td>
+                    <td>@customerData.PropertyId</td>
+                    <td>@customerData.ClientName</td>
+                    @if (customerData.MobileNumber.Length != 11 || !customerData.MobileNumber.StartsWith("07"))
+                    {
+                        <td class="incorrectMobNum" style="background-color:orange;">@customerData.MobileNumber</td>
+                    }
+                    else
+                    {
+                        <td>@customerData.MobileNumber</td>
+                    }
+
+                   
+                    @if(customerData.TenancyBalance < 0)
+                    {
+                        <td class="nagativeBalance" style="background-color:red;">@customerData.TenancyBalance</td>
+                    }
+                    else{
+                        <td>@customerData.TenancyBalance</td>
                         
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr><td colspan="5">No records found.</td></tr>
+                        }
+                   
+                </tr>
             }
         </tbody>
-    </table>
+    </MudSimpleTable>
+
+    <div class="card">
+        <div class="card-body">
+            @{
+
+                int incorrectMobileNumbers = 0;
+                foreach (var customerData in customerDatas)
+                {
+                    if (customerData.MobileNumber.Length != 11 || !customerData.MobileNumber.StartsWith("07"))
+                    {
+                        incorrectMobileNumbers++;
+                    }
+                }
+
+                <p>Number of records imported: @customerDatas.Count</p>
+                <p>Number of incorrect mobile numbers: @incorrectMobileNumbers</p>
+            }
+        </div>
+    </div>
+    <MudSwitch @bind-Checked="@fixedheader">Fixed Header</MudSwitch>
+
 }
 
 
 @code {
-    private List<CustomerData> records;
+    bool fixedheader = true;
+    private List<CustomerData>? customerDatas;
+    private string exportUrl;
+    private string exportFileName;
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
@@ -55,7 +89,30 @@
 
         if (response.IsSuccessStatusCode)
         {
-            records = await response.Content.ReadFromJsonAsync<List<CustomerData>>();
+            customerDatas = await response.Content.ReadFromJsonAsync<List<CustomerData>>();
         }
     }
+
+    private async Task ExportFilteredCsvFile()
+    {
+        var filteredData = customerDatas?.Where(cd => cd.TenancyBalance < 0 /*&& cd.MobileNumber.Length == 11 && cd.MobileNumber.StartsWith("07")*/);
+
+        var memoryStream = new MemoryStream();
+        var streamWriter = new StreamWriter(memoryStream);
+        var csvWriter = new CsvWriter(streamWriter, CultureInfo.InvariantCulture);
+             
+        foreach (var customerData in filteredData)
+        {
+            await streamWriter.WriteLineAsync($"1, Hello {customerData.ClientName} - you are receiving this message as you are currently in arrears., MoblieNumber: {customerData.MobileNumber}, TenencyNumber: {customerData.TenancyNumber},{DateTime.Now:dd/MM/yyyy H:mm}");
+
+        }        
+        await streamWriter.FlushAsync();
+        memoryStream.Seek(0, SeekOrigin.Begin);
+
+        var content = new StreamContent(memoryStream);
+        content.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+        exportFileName = $"exportedCsv-{DateTime.Now.ToFileTime()}.csv";
+        exportUrl = $"data:text/csv;charset=utf-8,{Uri.EscapeDataString(await content.ReadAsStringAsync())}";
+    }
+
 }
