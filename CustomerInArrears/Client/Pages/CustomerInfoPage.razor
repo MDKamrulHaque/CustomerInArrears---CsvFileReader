@@ -1,12 +1,19 @@
 ﻿@page "/customerdataimport"
-@using CustomerInArrears.Shared
-@inject HttpClient Http
-@using CsvHelper;
-@using System.Globalization;
-@using System.Net.Http.Headers;
 
-<InputFile OnChange="HandleFileSelected" />
-<MudButton><a @onclick="ExportFilteredCsvFile" href="@exportUrl" download="@exportFileName">Export File</a></MudButton>
+
+<div class="d-flex align-items-center justify-content-center">
+    <div class="p-2 m-2 bg-black text-white shadow rounded-2"> <InputFile OnChange="HandleFileSelected"/></div>
+@*    <div class="p-2 m-2 bg-danger text-white shadow rounded-2">
+        
+    </div>*@
+    <div class="p-2 m-2 bg-danger text-white shadow rounded-2">
+        <a href="@exportUrl" download="@exportFileName" class="btn btn-warning" @onclick="ExportFilteredCsvFile">Export File</a>
+</div>
+
+
+   
+</div>
+
 @if (customerDatas != null)
 {
     <MudSimpleTable Hover="true" Dense="true" FixedHeader="@fixedheader" Style="@(fixedheader?"height:300px;":"")">
@@ -49,8 +56,9 @@
             }
         </tbody>
     </MudSimpleTable>
-
-    <div class="card">
+    <br />
+    <br />
+    <div class="card alert-info">
         <div class="card-body">
             @{
 
@@ -73,46 +81,3 @@
 }
 
 
-@code {
-    bool fixedheader = true;
-    private List<CustomerData>? customerDatas;
-    private string exportUrl;
-    private string exportFileName;
-
-    private async Task HandleFileSelected(InputFileChangeEventArgs e)
-    {
-        var file = e.File;
-        var formData = new MultipartFormDataContent();
-        formData.Add(new StreamContent(file.OpenReadStream()), "file", file.Name);
-
-        var response = await Http.PostAsync("api/CsvFile/uploadcsvfile", formData);
-
-        if (response.IsSuccessStatusCode)
-        {
-            customerDatas = await response.Content.ReadFromJsonAsync<List<CustomerData>>();
-        }
-    }
-
-    private async Task ExportFilteredCsvFile()
-    {
-        var filteredData = customerDatas?.Where(cd => cd.TenancyBalance < 0 /*&& cd.MobileNumber.Length == 11 && cd.MobileNumber.StartsWith("07")*/);
-
-        var memoryStream = new MemoryStream();
-        var streamWriter = new StreamWriter(memoryStream);
-        var csvWriter = new CsvWriter(streamWriter, CultureInfo.InvariantCulture);
-             
-        foreach (var customerData in filteredData)
-        {
-            await streamWriter.WriteLineAsync($"1, Hello {customerData.ClientName} - you are receiving this message as you are currently in arrears., MoblieNumber: {customerData.MobileNumber}, TenencyNumber: {customerData.TenancyNumber},{DateTime.Now:dd/MM/yyyy H:mm}");
-
-        }        
-        await streamWriter.FlushAsync();
-        memoryStream.Seek(0, SeekOrigin.Begin);
-
-        var content = new StreamContent(memoryStream);
-        content.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
-        exportFileName = $"exportedCsv-{DateTime.Now.ToFileTime()}.csv";
-        exportUrl = $"data:text/csv;charset=utf-8,{Uri.EscapeDataString(await content.ReadAsStringAsync())}";
-    }
-
-}
