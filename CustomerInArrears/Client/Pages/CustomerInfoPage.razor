@@ -2,12 +2,9 @@
 
 
 <div class="d-flex align-items-center justify-content-center">
-    <div class="p-2 m-2 bg-black text-white shadow rounded-2"> <InputFile OnChange="HandleFileSelected"/></div>
-@*    <div class="p-2 m-2 bg-danger text-white shadow rounded-2">
-        
-    </div>*@
+    <div class="p-2 m-2 bg-black text-white shadow rounded-2 btn btn-outline-success"> <InputFile OnChange="HandleSelectedFile" /></div>
     <div class="p-2 m-2 bg-danger text-white shadow rounded-2">
-        <a href="@exportUrl" download="@exportFileName" class="btn btn-warning" @onclick="ExportFilteredCsvFile">Export File</a>
+        <a href="@exportUrl" download="@exportFileName" class="btn btn-danger" @onclick="ExportFilteredCsvFile">Export File</a>
 </div>
 
 
@@ -77,7 +74,13 @@
         </div>
     </div>
     <MudSwitch @bind-Checked="@fixedheader">Fixed Header</MudSwitch>
-
+}
+else
+{
+   
+    <div class="border d-flex align-items-center justify-content-center" style="height: 350px;">
+        <h3 class="align-middle">Please Import a CSV file!</h3>
+    </div>
 }
 
 

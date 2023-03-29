@@ -7,7 +7,6 @@ using System.Xml.Linq;
 
 namespace CustomerInArrears.Shared
 {
-
     public class CustomerData
     {
         public int TenancyNumber { get; set; }

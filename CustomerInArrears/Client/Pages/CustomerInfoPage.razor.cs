@@ -24,7 +24,7 @@ namespace CustomerInArrears.Client.Pages
         private string exportUrl;
         private string exportFileName;
 
-        private async Task HandleFileSelected(InputFileChangeEventArgs e) 
+        private async Task HandleSelectedFile(InputFileChangeEventArgs e) 
         {
             var file = e.File; 
             var formData = new MultipartFormDataContent();  
@@ -38,45 +38,30 @@ namespace CustomerInArrears.Client.Pages
             }
         }
 
-        //private async Task ExportFilteredCsvFile()
-        //{
-        //    var filteredData = customerDatas?.Where(cd => cd.TenancyBalance < 0 && cd.MobileNumber.Length == 11 && cd.MobileNumber.StartsWith("07"));  
-
-        //    var memoryStream = new MemoryStream(); 
-        //    var streamWriter = new StreamWriter(memoryStream); 
-        //    var csvWriter = new CsvWriter(streamWriter, CultureInfo.InvariantCulture); 
-
-
-        //    foreach (var customerData in filteredData) 
-        //    {
-        //        await streamWriter.WriteLineAsync($"1, Hello {customerData.ClientName} - you are receiving this message as you are currently in arrears., MoblieNumber: {customerData.MobileNumber}, TenencyNumber: {customerData.TenancyNumber},{DateTime.Now:dd/MM/yyyy H:mm}");
-
-        //    }
-        //    await streamWriter.FlushAsync(); 
-        //    memoryStream.Seek(0, SeekOrigin.Begin); 
-
-        //    var content = new StreamContent(memoryStream); 
-        //    content.Headers.ContentType = new MediaTypeHeaderValue("text/csv"); 
-        //    exportFileName = $"exportedCsv-{DateTime.Now.ToFileTime()}.csv"; 
-        //    exportUrl = $"data:text/csv;charset=utf-8,{Uri.EscapeDataString(await content.ReadAsStringAsync())}"; 
-        //}
-
         private async Task ExportFilteredCsvFile()
         {
             var filteredData = customerDatas?.Where(cd => cd.TenancyBalance < 0 && cd.MobileNumber.Length == 11 && cd.MobileNumber.StartsWith("07"));
 
-            var response = await Http.PostAsJsonAsync("api/CsvFile/exportFile", filteredData);
-            if (response.IsSuccessStatusCode)
+            var memoryStream = new MemoryStream();
+            var streamWriter = new StreamWriter(memoryStream);
+            var csvWriter = new CsvWriter(streamWriter, CultureInfo.InvariantCulture);
+
+
+            foreach (var customerData in filteredData)
             {
-                var memoryStream = new MemoryStream();
-                var streamWriter = new StreamWriter(memoryStream);
-                await streamWriter.FlushAsync();
-                exportFileName = $"exportedCsv-{DateTime.Now.ToFileTime()}.csv";
-                exportUrl = await response.Content.ReadAsStringAsync();
+                await streamWriter.WriteLineAsync($"1, Hello {customerData.ClientName} - you are receiving this message as you are currently in arrears., MoblieNumber: {customerData.MobileNumber}, TenencyNumber: {customerData.TenancyNumber},{DateTime.Now:dd/MM/yyyy H:mm}");
 
             }
+            await streamWriter.FlushAsync();
+            memoryStream.Seek(0, SeekOrigin.Begin);
 
+            var content = new StreamContent(memoryStream);
+            content.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+            exportFileName = $"exportedCsv-{DateTime.Now.ToFileTime()}.csv";
+            exportUrl = $"data:text/csv;charset=utf-8,{Uri.EscapeDataString(await content.ReadAsStringAsync())}";
         }
+
+
 
     }
 }
